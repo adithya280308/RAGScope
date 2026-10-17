@@ -45,7 +45,7 @@ approach actually performs better* on your own documents.
 ## 🏗️ Architecture
 
 <p align="center">
-  <img src="assets/ragscope_architecture.png" alt="RagScope Architecture" width="100%">
+  <img src="images/ragscope_architecture.png" alt="RagScope Architecture" width="100%">
 </p>
 
 ---
@@ -53,7 +53,7 @@ approach actually performs better* on your own documents.
 ## 🧠 Retrieval Strategies
 
 <p align="center">
-  <img src="assets/retrieval_strategies.png" alt="RagScope Retrieval Strategies" width="100%">
+  <img src="images/SentenceRetrievalStratergiesCompared.png" alt="Sentence Retrieval Strategies Compared" width="100%">
 </p>
 
 ### 1. Sentence Window Retrieval
