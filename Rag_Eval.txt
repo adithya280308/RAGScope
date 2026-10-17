@@ -1,0 +1,6 @@
+
+12. How does the size of a sentence window affect retrieval quality and the amount of context provided to the language model?
+
+13. What is Auto-Merging Retrieval, and how does it use parent-child relationships between nodes?
+
+20. How can evaluation metrics such as context relevance, answer relevance, and groundedness be used to determine whether an advanced RAG pipeline improves over basic vector retrieval?

@@ -1,0 +1,233 @@
+# Vector Databases
+
+## Introduction to Vector Databases
+
+Vector databases are specialized systems designed to store, organize, and retrieve numerical vector representations of data. They have become an important component of modern artificial intelligence applications, particularly semantic search, recommendation systems, and Retrieval-Augmented Generation.
+
+Traditional databases are generally designed to work with structured data such as numbers, strings, dates, and relationships between records. A conventional database can efficiently answer queries such as finding all users from a particular city or retrieving products below a specific price. However, searching for information based on semantic meaning is more difficult with traditional databases.
+
+Vector databases address this problem by storing embeddings. An embedding is a numerical representation of data produced by an embedding model. Text with similar meanings can be represented by vectors that are close to each other in a high-dimensional mathematical space. A vector database can use these representations to find information that is semantically related to a query.
+
+In a RAG application, a vector database commonly acts as the storage layer for document embeddings. Documents are processed into chunks, each chunk is converted into an embedding, and the resulting vectors are stored together with the original text and metadata. When a user asks a question, the question is converted into another vector and the database searches for similar stored vectors.
+
+## Vectors and Embeddings
+
+A vector is an ordered collection of numerical values. For example, a simplified vector could be represented as [0.12, -0.45, 0.73, 0.21]. Real embedding models generally produce vectors with many more dimensions.
+
+An embedding model converts an input such as a sentence or paragraph into a vector. The numerical values do not directly represent individual words or concepts in an easily interpretable way. Instead, the entire vector represents characteristics of the input in a learned representation space.
+
+Consider two sentences: "How does semantic search work?" and "How can a system search documents by meaning?" Although the words are different, the sentences express a similar idea. An effective embedding model should produce representations that are relatively close in the embedding space.
+
+This property allows vector databases to perform semantic retrieval. Instead of requiring an exact keyword match, the system can identify documents that express concepts related to the query.
+
+The quality of vector retrieval depends strongly on the embedding model. Different embedding models may produce different vector dimensions and may perform differently across domains. A general-purpose model may perform well on common text while a specialized model may perform better for technical or domain-specific documents.
+
+## Vector Similarity
+
+A vector database needs a method for determining how similar two vectors are. Several similarity measures can be used, including cosine similarity, dot product, and Euclidean distance.
+
+Cosine similarity measures the angle between two vectors. It focuses on the direction of the vectors rather than their magnitude. When two vectors point in similar directions, their cosine similarity is high.
+
+Dot product calculates a mathematical product between two vectors. Depending on the embedding model and whether vectors are normalized, dot product can be used as an efficient similarity measure.
+
+Euclidean distance measures the straight-line distance between two points in vector space. Smaller distances indicate greater similarity when this metric is used.
+
+The choice of similarity measure depends on the embedding model and the indexing strategy. Some systems normalize embeddings before using dot product so that the resulting comparison behaves similarly to cosine similarity.
+
+## Vector Indexing
+
+Searching through every stored vector can become expensive when a database contains millions or billions of vectors. Vector indexing techniques are therefore used to make similarity search more efficient.
+
+An exact search compares the query vector against every stored vector. This can provide highly accurate results because every candidate is considered. However, the computational cost increases as the number of vectors grows.
+
+Approximate nearest neighbor methods trade a small amount of search accuracy for significantly faster retrieval. Instead of examining every vector, the index organizes the vector space so that likely candidates can be identified more efficiently.
+
+Different indexing approaches use different strategies. Flat indexes perform direct comparisons and are often useful for smaller datasets or evaluation experiments. Other approaches use clustering, graphs, hashing, or quantization to improve search performance for larger datasets.
+
+The choice of index depends on the number of vectors, latency requirements, available memory, hardware, and acceptable retrieval accuracy.
+
+## Metadata Storage
+
+A vector by itself is not sufficient for most RAG applications. The system also needs to know where the vector came from and what text it represents.
+
+Vector databases therefore commonly store metadata alongside embeddings. Metadata may include a document identifier, file name, section title, page number, source type, author, timestamp, or category.
+
+For example, a stored record might conceptually contain a vector, the text associated with that vector, and metadata such as:
+
+Document: vector_databases.txt
+
+Section: Vector Indexing
+
+Chunk ID: vector_index_04
+
+The metadata can later be used to filter search results. A system could restrict retrieval to documents from a specific category or source.
+
+Metadata is especially useful in enterprise RAG applications where the knowledge base contains information from multiple departments or document types.
+
+## Vector Databases in RAG
+
+Vector databases are commonly used in RAG pipelines to store the embeddings generated from document chunks.
+
+The process begins with document ingestion. Source documents are loaded into the system and divided into smaller chunks. Each chunk is then passed through an embedding model. The resulting embedding is stored in the vector database along with the original chunk and associated metadata.
+
+When a user submits a query, the query is converted into an embedding using the embedding model. The vector database compares this query vector with the stored document vectors.
+
+The database returns the most similar candidates according to the selected similarity metric and retrieval configuration. These candidates are then passed to later stages of the RAG pipeline.
+
+The retrieved documents may be sent directly to a language model, or they may first pass through additional retrieval techniques such as query expansion, filtering, sentence window expansion, auto-merging, or reranking.
+
+Therefore, the vector database is primarily responsible for efficient candidate retrieval. It does not normally generate the final natural-language answer.
+
+## Chunking and Vector Storage
+
+Chunking has a direct effect on how information is represented in a vector database. If documents are divided into extremely small chunks, each vector may represent only a small fragment of an idea.
+
+For example, one chunk may contain a definition while another contains the explanation of that definition. If these pieces are stored independently, a query may retrieve only one of them.
+
+Larger chunks can preserve more context, but they may also combine unrelated concepts into a single vector. This can reduce retrieval precision because the vector represents several ideas at once.
+
+The relationship between chunk size and vector retrieval is therefore important. The ideal chunking strategy depends on the type of documents and questions expected in the application.
+
+Some advanced RAG systems use hierarchical nodes. A large parent node can contain several smaller child nodes. The child nodes provide precise retrieval units, while the parent node preserves broader context.
+
+This structure is particularly useful for techniques such as Auto-Merging Retrieval.
+
+## Parent and Child Nodes
+
+Hierarchical vector storage allows a document to be represented at multiple levels.
+
+A parent node may represent an entire section, while child nodes represent smaller paragraphs or groups of sentences. The child nodes can be embedded and indexed for fine-grained retrieval.
+
+Suppose a document contains a section called "Vector Similarity." That section may be represented as a parent node containing several child nodes. One child node could explain cosine similarity, another could explain dot product, and another could discuss Euclidean distance.
+
+A query about cosine similarity might retrieve only the relevant child node. A broader query about vector similarity could retrieve several children from the same parent.
+
+This structure enables retrieval systems to reason about relationships between pieces of a document. Instead of treating every chunk as completely independent, the system can recognize that several chunks belong to the same larger section.
+
+## Auto-Merging and Vector Databases
+
+Auto-Merging Retrieval can use hierarchical relationships stored during document indexing.
+
+During retrieval, the system first searches smaller child nodes. If several relevant child nodes belong to the same parent, the system can determine that a larger context may be more useful.
+
+For example, suppose three child nodes from a section about vector indexing are retrieved. Instead of sending three disconnected fragments to the language model, the retrieval system can merge them into their parent context.
+
+This approach can provide more complete information while still allowing the initial retrieval process to operate on small and precise nodes.
+
+The effectiveness of auto-merging depends on how the hierarchy was created. Poorly designed parent and child relationships may cause unrelated information to be merged.
+
+## Sentence-Level Retrieval and Vector Databases
+
+Vector databases can also support sentence-level retrieval. Instead of embedding large paragraphs, a system can create embeddings for individual sentences.
+
+Sentence-level retrieval can provide highly precise matching. However, individual sentences may not contain enough context to answer a question.
+
+Sentence Window Retrieval addresses this issue by retrieving a matching sentence and then expanding the result using neighboring sentences.
+
+For example, if a sentence explaining vector indexing is retrieved, the system can also retrieve the sentences immediately before and after it. The resulting context can provide a more complete explanation.
+
+This demonstrates an important principle of advanced RAG design: the retrieval unit does not always have to be the final context unit.
+
+A system can retrieve a small unit for precision and then expand that unit into a larger context before generation.
+
+## Reranking Vector Search Results
+
+Vector similarity provides an efficient way to identify candidate documents, but similarity alone does not always produce the best ordering.
+
+Two documents may have similar embeddings because they discuss the same broad topic. However, only one may directly answer the user's question.
+
+Reranking can be applied after vector retrieval. The vector database first retrieves a set of candidate documents, such as the top ten or twenty results. A reranking model then examines each candidate together with the query.
+
+The reranker produces relevance scores and creates a new ranking. The highest-ranked documents can then be selected as the final context.
+
+This two-stage architecture combines the speed of vector retrieval with the more detailed relevance analysis of a reranking model.
+
+The number of candidates retrieved before reranking affects the system. If the first-stage retrieval returns too few candidates, the correct document may never reach the reranker. If too many candidates are retrieved, reranking becomes more computationally expensive.
+
+## Hybrid Retrieval
+
+Vector search is not the only retrieval method available. Traditional keyword-based retrieval can be useful when exact terms matter.
+
+For example, a user may search for a specific technical identifier, product code, function name, or error message. Semantic similarity may not always be the best approach for these cases.
+
+Hybrid retrieval combines multiple retrieval strategies. A system may use vector similarity to capture semantic relationships and keyword retrieval to capture exact lexical matches.
+
+The results from multiple retrieval methods can then be combined using a ranking or fusion strategy. This can improve retrieval robustness because different methods capture different aspects of relevance.
+
+Hybrid retrieval can also be followed by reranking. The combined candidate set is passed to a reranking model, which determines the final ordering.
+
+## Scaling Vector Search
+
+Small vector collections can often be searched efficiently using exact methods. As the number of vectors increases, approximate nearest neighbor indexing becomes increasingly important.
+
+Scaling introduces several challenges. Memory usage increases with the number and dimensionality of vectors. Search latency must remain acceptable as the collection grows. Index construction and updates can also become expensive.
+
+Different vector databases provide different strategies for addressing these problems. Some systems distribute data across multiple machines, while others use specialized indexing and compression techniques.
+
+Vector quantization can reduce memory requirements by representing vectors using fewer bits. Graph-based indexes can improve search speed by navigating relationships between nearby vectors.
+
+There is always a trade-off between search accuracy, memory usage, indexing time, and query latency. The best configuration depends on the requirements of the application.
+
+## Updating Vector Databases
+
+Knowledge bases are rarely static. New documents may be added, existing documents may be updated, and outdated documents may need to be removed.
+
+When a document changes, its corresponding chunks and embeddings may need to be regenerated. If the old vectors remain in the database, the retrieval system may return outdated information.
+
+A production RAG system therefore needs a strategy for document updates. Each document and chunk should have an identifier that allows the corresponding records to be located and updated.
+
+Metadata such as timestamps and document versions can help manage changes. A system can also maintain information about when a document was indexed.
+
+Update strategies become particularly important in enterprise applications where documentation changes frequently.
+
+## Vector Database Limitations
+
+Vector databases provide powerful retrieval capabilities, but they do not automatically solve every RAG problem.
+
+First, embedding quality affects retrieval quality. If an embedding model fails to represent an important relationship, the vector database may not retrieve the correct information.
+
+Second, vector similarity does not guarantee factual relevance. Two documents can be semantically similar while answering different questions.
+
+Third, poor chunking can reduce retrieval performance. Even a powerful vector database cannot recover information that was badly divided or represented.
+
+Fourth, large-scale vector search introduces computational and storage costs. More sophisticated indexes may require additional memory or infrastructure.
+
+Finally, retrieval quality should be evaluated using realistic questions. A system that performs well on a few manually selected examples may still fail on broader workloads.
+
+## Evaluation of Vector Retrieval
+
+Evaluating vector retrieval involves measuring whether relevant documents appear among the retrieved results.
+
+One common approach is to create a collection of test questions and identify the documents that should be relevant to each question. The retrieval system can then be evaluated based on whether those documents are returned.
+
+Metrics such as precision, recall, and ranking-based measures can provide useful information about retrieval performance.
+
+However, RAG evaluation often goes beyond retrieval accuracy. The retrieved context must also support the final generated answer.
+
+Frameworks such as TruLens can help evaluate different parts of a RAG pipeline. Context relevance can indicate whether retrieved information is useful for the question. Groundedness can measure whether the generated answer is supported by the retrieved context. Answer relevance can indicate whether the final response addresses the user's question.
+
+This makes evaluation particularly useful when comparing retrieval configurations.
+
+## Comparing Retrieval Strategies
+
+A vector database can serve as the foundation for multiple retrieval strategies. A project can compare basic vector retrieval with Sentence Window Retrieval, Auto-Merging Retrieval, and reranked retrieval.
+
+For example, the same evaluation questions can be sent through each configuration. The retrieved context and generated answers can then be recorded.
+
+If Sentence Window Retrieval improves context relevance, its scores should reflect that improvement. If Auto-Merging provides more complete context, groundedness may improve. If reranking places more relevant documents at the top, answer relevance may increase.
+
+These improvements should be measured rather than assumed.
+
+An advanced RAG system should therefore treat the vector database as one component within a larger retrieval architecture. The database provides efficient storage and candidate retrieval, while other components refine and evaluate the results.
+
+## Conclusion
+
+Vector databases provide an efficient foundation for semantic retrieval by storing embeddings together with source content and metadata. They allow RAG applications to search large collections of information based on semantic similarity rather than relying only on exact keyword matches.
+
+The effectiveness of vector retrieval depends on several factors, including embedding quality, chunking strategy, similarity metrics, indexing methods, metadata design, and retrieval configuration.
+
+Advanced RAG architectures can build on vector databases using hierarchical nodes, Sentence Window Retrieval, Auto-Merging Retrieval, hybrid retrieval, and reranking. These techniques address different retrieval challenges and can work together to produce better context for language model generation.
+
+Vector databases should not be viewed as complete RAG systems by themselves. They provide the retrieval foundation, but the quality of the complete application depends on how documents are processed, how candidates are retrieved, how context is expanded, how results are reranked, and how the final system is evaluated.
+
+A well-designed vector retrieval layer should therefore be evaluated using realistic queries and measurable criteria. Combining vector search with advanced retrieval and evaluation techniques allows developers to understand not only whether a system can retrieve information, but also whether the retrieved information actually improves the final answers generated by the RAG application.

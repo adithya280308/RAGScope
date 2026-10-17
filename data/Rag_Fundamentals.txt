@@ -1,0 +1,183 @@
+# RAG Fundamentals
+
+## Introduction to Retrieval-Augmented Generation
+
+Retrieval-Augmented Generation, commonly known as RAG, is an architecture that combines information retrieval with large language models. A conventional large language model generates responses primarily from information encoded in its learned parameters. Although this approach is powerful, a language model may not have access to private information, recently updated information, or specialized organizational knowledge. RAG addresses this limitation by allowing the model to retrieve relevant information from an external knowledge source before generating a response.
+
+The central idea behind RAG is relatively simple. Instead of asking a language model to answer a question using only its internal knowledge, a RAG application first searches a collection of documents for information related to the question. The retrieved information is then provided to the language model as additional context. The model uses this context to construct an answer.
+
+A basic RAG pipeline can therefore be represented as document ingestion, document processing, indexing, retrieval, and generation. Each stage has an effect on the quality of the final response. Poor document processing can lead to poor retrieval, while poor retrieval can result in incomplete or unsupported answers even when the language model itself is capable of producing high-quality text.
+
+## Why RAG Is Needed
+
+Large language models are trained using large collections of text, but their knowledge has limitations. Training data may have a cutoff date, and the model may not know information that was created after training. In addition, organizations often have internal documents that were never included in public training data.
+
+For example, a company may maintain internal technical documentation describing its software systems, employee policies, customer support procedures, and engineering guidelines. A general-purpose language model cannot automatically access these documents. A RAG system can connect the language model to this private knowledge base.
+
+RAG can also reduce the need to retrain a language model whenever information changes. If a company's documentation is updated, the new documents can be processed and added to the retrieval system. The underlying language model does not necessarily need to be retrained.
+
+Another advantage of RAG is that retrieved information can provide evidence for generated responses. Instead of relying entirely on the model's internal knowledge, the generation stage receives explicit context from the external knowledge base. This can make the system more useful for applications where answers need to be based on specific documents.
+
+## Components of a RAG System
+
+A complete RAG application generally contains several components. The first component is the document collection. Documents may originate from text files, PDFs, websites, databases, product manuals, research papers, or internal company documentation.
+
+The second component is a document processing pipeline. Raw documents are usually cleaned and divided into smaller pieces. These pieces are commonly called chunks or nodes. The purpose of chunking is to create retrievable units that are small enough to search efficiently while still containing enough information to provide useful context.
+
+The third component is an embedding model. The embedding model converts text into numerical vectors. These vectors represent semantic characteristics of the text and allow the retrieval system to compare a user query with stored documents.
+
+The fourth component is a storage and retrieval system. Vector databases and vector indexes can store embeddings and perform similarity searches. Examples include systems designed specifically for vector search as well as libraries that provide efficient nearest-neighbor search.
+
+The final component is the language model. After relevant information has been retrieved, the retrieved context and the user's question are passed to the language model. The model uses the supplied context to generate the final response.
+
+## Document Ingestion
+
+Document ingestion is the first major stage in building a RAG system. During ingestion, source documents are loaded into the application and converted into a format that can be processed by later stages.
+
+A document may contain several types of information, including titles, headings, paragraphs, lists, tables, and metadata. Preserving this structure can be important because relationships between sections often contain useful contextual information.
+
+For example, a technical document might contain a section titled "Vector Search" followed by several paragraphs describing indexing, similarity calculations, and metadata filtering. If the document is divided without considering its structure, information that belongs together may be separated unnecessarily.
+
+Metadata can also be stored alongside document content. Useful metadata may include the document name, section title, page number, document type, author, or creation date. Metadata can later be used for filtering and analysis.
+
+## Chunking
+
+Chunking is the process of dividing a larger document into smaller pieces. It is one of the most important design decisions in a RAG pipeline because retrieval normally operates on these smaller units.
+
+If chunks are extremely small, they may contain only fragments of an idea. For example, a sentence might state that a particular retrieval technique improves context quality, while the next several sentences explain why it works. Retrieving only the first sentence may provide insufficient information.
+
+On the other hand, extremely large chunks may contain several unrelated topics. A query about embeddings could retrieve a large section containing information about embeddings, vector databases, reranking, and evaluation. The language model would then receive unnecessary context.
+
+Chunk overlap is commonly used to reduce the loss of information at chunk boundaries. With overlapping chunks, some text appears in more than one chunk. This allows concepts that span boundaries to remain available to the retrieval system.
+
+There is no universal chunk size that works for every RAG application. The appropriate strategy depends on document structure, query types, language model context limits, and retrieval requirements.
+
+## Embeddings
+
+An embedding is a numerical representation of text. An embedding model converts a piece of text into a vector containing numerical values. Texts with related meanings tend to have similar representations in the embedding space.
+
+For example, consider the queries "What is semantic search?" and "How does searching by meaning work?" The words are different, but the underlying concepts are related. A good embedding model can represent this semantic relationship.
+
+During indexing, each document chunk is converted into an embedding and stored. When a user asks a question, the query is also converted into an embedding. The retrieval system compares the query embedding with document embeddings to identify similar content.
+
+Similarity can be calculated using measures such as cosine similarity or dot product. The similarity score is used to rank candidate documents.
+
+Embeddings are powerful, but semantic similarity is not the same as exact relevance. Two pieces of text may discuss closely related topics while only one directly answers the question. This limitation becomes important when designing advanced retrieval pipelines.
+
+## Vector Retrieval
+
+Vector retrieval searches for documents whose embeddings are similar to the embedding of a query. The retrieved documents are usually ordered according to a similarity score.
+
+Suppose a knowledge base contains information about embeddings, vector databases, reranking, and evaluation. A user asks, "Why are embeddings used in RAG?" The retrieval system should identify the chunks discussing embeddings and their role in semantic search.
+
+The number of documents retrieved is an important parameter. Retrieving only one result may cause relevant information to be missed. Retrieving too many results may introduce irrelevant information and increase the amount of context sent to the language model.
+
+Vector retrieval is therefore often treated as a first-stage retrieval mechanism rather than the complete solution. Advanced RAG systems can apply additional processing to the initial results.
+
+## Context and Retrieval Quality
+
+The quality of retrieved context strongly influences the final answer. A language model can produce grammatically correct and convincing text even when the supplied context is poor. This makes retrieval quality particularly important.
+
+Two common retrieval problems are insufficient context and irrelevant context.
+
+Insufficient context occurs when the retrieved text does not contain enough information to answer the question. This can happen when chunks are too small or when the retrieval system selects only one sentence from a larger explanation.
+
+Irrelevant context occurs when the retrieval system returns information that is related to the query but does not directly help answer it. This can happen when multiple documents discuss the same general topic.
+
+Advanced retrieval methods attempt to address these problems by improving how context is selected and represented.
+
+## Sentence Window Retrieval
+
+Sentence Window Retrieval is a technique designed to preserve local context around a relevant sentence. Instead of treating a matching sentence as an isolated piece of information, the system can retrieve the surrounding sentences as a larger context window.
+
+This approach is useful because technical explanations are often distributed across several consecutive sentences. One sentence may introduce a concept, another may explain its mechanism, and a later sentence may describe its advantages or limitations.
+
+For example, suppose a document contains several sentences explaining reranking. The retrieval system may identify one sentence that directly matches the user's query. Returning only that sentence could omit important details. A sentence window retriever can include nearby sentences so that the language model receives a more complete explanation.
+
+The size of the window is an important parameter. A small window provides focused context, while a larger window provides more surrounding information. However, increasing the window indefinitely can introduce unrelated information.
+
+Sentence Window Retrieval therefore attempts to balance precision and contextual completeness. It is particularly useful for documents where neighboring sentences have strong semantic relationships.
+
+## Auto-Merging Retrieval
+
+Auto-Merging Retrieval uses a hierarchical representation of documents. Instead of creating only independent chunks, documents can be organized into parent and child nodes.
+
+A parent node represents a larger section of a document, while child nodes represent smaller pieces of that section. The smaller child nodes can be used for precise retrieval.
+
+When a query is submitted, the retrieval system can identify relevant child nodes. If multiple child nodes from the same parent are retrieved, the system can merge or replace those child results with a larger parent context.
+
+For example, a technical document may contain a section about vector databases. The section can be represented as a parent node and divided into child nodes covering vector storage, similarity search, indexing, and metadata.
+
+A query about vector indexing might retrieve one child node. A broader query about vector database architecture might retrieve several children belonging to the same parent. Auto-merging can recognize this relationship and provide a larger context.
+
+The main advantage of this technique is that retrieval can remain fine-grained while generation receives broader context when appropriate.
+
+## Reranking
+
+Reranking is another important technique in advanced retrieval systems. A first-stage retriever may quickly identify several candidate documents, but the initial ranking may not perfectly represent their actual relevance to the query.
+
+A reranker examines the query and candidate documents in greater detail and produces a new ordering.
+
+One common approach uses a cross-encoder model. Unlike a standard embedding model, which independently represents the query and document, a cross-encoder processes the query and candidate document together. This allows the model to analyze relationships between the two pieces of text more directly.
+
+For example, a vector retriever may return five documents about RAG. Three documents may discuss general RAG concepts, while one directly explains the specific question asked by the user. A reranking model can assign a higher relevance score to the directly useful document.
+
+Reranking is usually applied after initial retrieval because running a computationally expensive model over an entire knowledge base would be inefficient. The first-stage retriever narrows the candidate set, and the reranker performs more detailed analysis on those candidates.
+
+The number of candidates sent to the reranker is therefore an important configuration. Too few candidates can cause relevant information to be missed, while too many candidates can increase computational cost.
+
+## Generation
+
+After retrieval and optional reranking, the selected context is provided to a language model. The model receives the original user question together with the retrieved information.
+
+The prompt can instruct the language model to use the provided context when answering. In a well-designed RAG system, the retrieved information acts as the primary source of evidence.
+
+The generation stage does not eliminate the need for good retrieval. If the retrieved documents do not contain the required information, the language model may still produce an incomplete answer or rely on information outside the supplied context.
+
+For this reason, retrieval and generation should be treated as connected but separate stages of the architecture.
+
+## Advanced RAG Pipeline
+
+An advanced RAG pipeline can combine multiple retrieval techniques. A possible pipeline begins with document ingestion and hierarchical node creation. The system then creates embeddings and stores the nodes for retrieval.
+
+When a user submits a query, an initial retriever identifies candidate nodes. A Sentence Window Retriever can expand relevant sentences with their surrounding context. An Auto-Merging Retriever can combine related child nodes when sufficient evidence comes from the same parent section.
+
+The resulting candidates can then be passed through a reranking model. The reranker orders the candidates according to their relevance to the query. Only the highest-ranked context is finally passed to the language model.
+
+This architecture attempts to solve several problems at different stages. Sentence windows preserve local context, auto-merging preserves hierarchical context, and reranking improves the ordering of retrieved information.
+
+## RAG Evaluation
+
+A RAG system should not be evaluated only by reading a few generated answers. A response may sound convincing while containing information that was not supported by the retrieved context.
+
+Evaluation can examine several properties of the pipeline.
+
+Context relevance measures whether the retrieved information is useful for the question. If the context is unrelated, the retrieval stage has failed even if the final answer happens to sound reasonable.
+
+Answer relevance measures whether the generated response actually addresses the user's question. A response may contain correct information but still fail to answer what was asked.
+
+Groundedness measures whether the generated answer is supported by the retrieved context. A grounded answer should be based on the evidence provided by the retrieval stage rather than introducing unsupported claims.
+
+TruLens can be used to evaluate and monitor RAG applications. It can record inputs, retrieved context, generated outputs, and evaluation results. These measurements allow developers to compare different retrieval strategies.
+
+For example, a project can compare basic vector retrieval with Sentence Window Retrieval, Auto-Merging Retrieval, and reranked retrieval. Evaluation scores can then be used to determine whether the additional retrieval techniques actually improve the system.
+
+## Importance of Evaluation
+
+Advanced techniques should not be added simply because they sound sophisticated. Each technique introduces additional complexity and may affect latency, memory usage, and implementation difficulty.
+
+A useful evaluation compares multiple configurations under the same test questions. For example, a basic vector retriever can be compared with a Sentence Window Retriever. Auto-Merging Retrieval can then be tested separately. Finally, reranking can be added to determine whether the ranking quality improves.
+
+A collection of evaluation questions should cover different parts of the knowledge base. Questions should include direct factual questions, questions requiring contextual understanding, and questions where several documents contain related information.
+
+The evaluation results can reveal where the retrieval pipeline performs well and where improvements are necessary. A system that retrieves highly relevant context but generates poorly grounded answers may require improvements to the generation prompt. A system with poor context relevance may require changes to chunking, retrieval, or reranking.
+
+## Conclusion
+
+Retrieval-Augmented Generation provides a practical architecture for connecting language models with external knowledge. Its effectiveness depends on multiple stages, including document processing, chunking, embedding, retrieval, context selection, reranking, and generation.
+
+Basic vector retrieval provides an efficient way to identify potentially relevant information, but advanced techniques can improve the quality of the context. Sentence Window Retrieval preserves surrounding information around relevant sentences, while Auto-Merging Retrieval uses hierarchical relationships to provide broader context when multiple related child nodes are retrieved. Reranking models can further improve the ordering of candidate documents before they are passed to the language model.
+
+Evaluation is an essential part of developing an advanced RAG system. Tools such as TruLens can help measure context relevance, answer relevance, and groundedness. By comparing different retrieval configurations using consistent evaluation questions, developers can determine whether advanced techniques actually improve the quality of the complete RAG pipeline.
+
+A well-designed RAG system is therefore not simply a language model connected to a vector database. It is a complete information retrieval and generation pipeline in which every stage contributes to the quality, reliability, and usefulness of the final answer.

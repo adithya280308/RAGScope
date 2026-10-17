@@ -1,0 +1,329 @@
+# Advanced Retrieval
+
+## Introduction to Advanced Retrieval
+
+Retrieval is one of the most important stages in a Retrieval-Augmented Generation system. A language model can generate fluent and detailed responses, but the quality of those responses depends heavily on the information provided to it. If the retrieval system selects irrelevant, incomplete, or poorly ranked information, the generation stage may produce an answer that does not correctly address the user's question.
+
+Basic vector retrieval is a useful starting point for RAG applications. It converts documents and queries into embeddings and retrieves documents with similar vector representations. However, semantic similarity alone does not always guarantee that the retrieved information is the best possible context for a question.
+
+Advanced retrieval techniques attempt to improve this process by considering additional information about documents, their structure, the relationship between queries and documents, and the relevance of retrieved results. Techniques such as Sentence Window Retrieval, Auto-Merging Retrieval, reranking, query expansion, hybrid retrieval, metadata filtering, and fusion methods can be used to improve retrieval quality.
+
+The purpose of advanced retrieval is not simply to retrieve more documents. The objective is to retrieve the most useful information while maintaining an appropriate balance between relevance, context, computational cost, and latency.
+
+## Limitations of Basic Vector Retrieval
+
+Basic vector retrieval generally follows a straightforward process. Documents are divided into chunks, embeddings are generated for those chunks, and the embeddings are stored in a vector database. When a query arrives, its embedding is compared with the stored embeddings, and the most similar chunks are returned.
+
+This approach works well for many queries, but it has several limitations.
+
+The first limitation is that semantic similarity does not always equal relevance. Two chunks can discuss the same broad topic while only one directly answers the question.
+
+The second limitation is context loss. A retrieved chunk may contain an important sentence but not the sentences needed to understand that sentence fully.
+
+The third limitation is document structure. Basic retrieval often treats chunks as independent units even when they belong to the same section or document.
+
+The fourth limitation is ranking quality. The first-stage retriever may return several relevant candidates but place the most useful result below less useful results.
+
+Advanced retrieval methods address these limitations at different stages of the pipeline.
+
+## Retrieval Pipeline
+
+An advanced retrieval pipeline can contain several stages.
+
+The first stage is query processing. The original user query can be analyzed, expanded, rewritten, or transformed into alternative queries.
+
+The second stage is candidate retrieval. One or more retrieval methods can identify potentially relevant documents.
+
+The third stage is context expansion. A retrieved sentence or child node can be expanded into a larger context using neighboring sentences or parent nodes.
+
+The fourth stage is reranking. A dedicated model can examine the query and retrieved candidates and reorder them according to relevance.
+
+The final stage is context selection. Only the highest-quality information is passed to the language model for generation.
+
+This architecture separates fast candidate retrieval from more detailed relevance analysis.
+
+## Sentence Window Retrieval
+
+Sentence Window Retrieval is designed to preserve local context around a retrieved sentence.
+
+Traditional chunking divides a document into relatively large pieces. Sentence Window Retrieval instead allows individual sentences to act as precise retrieval units. Each sentence can contain metadata identifying its location and neighboring sentences.
+
+When a query matches a particular sentence, the retrieval system can retrieve the surrounding sentences as a context window.
+
+This is useful because the meaning of a sentence can depend on nearby information. A sentence may introduce a concept, while the following sentences explain its mechanism, advantages, or limitations.
+
+For example, consider a technical explanation where one sentence states that reranking improves retrieval quality. The next sentence may explain that a reranker examines the relationship between the query and candidate documents. A third sentence may describe how the reranker assigns relevance scores.
+
+If only the first sentence is retrieved, the language model receives limited information. A sentence window can provide all three sentences as context.
+
+## Sentence Window Size
+
+The size of the sentence window is an important configuration.
+
+A small window may contain only one or two neighboring sentences. This keeps the context focused and reduces the amount of irrelevant information.
+
+A larger window can provide more complete explanations, especially when concepts span multiple sentences. However, larger windows can introduce unrelated information from nearby parts of the document.
+
+The optimal window size depends on the structure of the source documents and the types of questions asked.
+
+Technical documentation often benefits from moderate windows because explanations are commonly written in connected paragraphs. Highly structured documents may require different settings.
+
+Sentence Window Retrieval therefore represents a trade-off between precision and contextual completeness.
+
+## Advantages of Sentence Window Retrieval
+
+One advantage is improved local context. The retrieved information can include explanations surrounding the exact sentence that matched the query.
+
+Another advantage is precise retrieval. Individual sentences can act as fine-grained retrieval units, allowing the system to identify highly relevant pieces of information.
+
+Sentence Window Retrieval can also reduce the need to use very large chunks. Instead of making every chunk large enough to preserve context, the system can retrieve small units and dynamically expand them when needed.
+
+This can be especially useful when a document contains many topics. Fine-grained sentence retrieval allows the system to identify the relevant part of the document before expanding the context.
+
+## Auto-Merging Retrieval
+
+Auto-Merging Retrieval is a hierarchical retrieval technique. It represents documents using relationships between parent and child nodes.
+
+A parent node represents a larger section of a document. That parent can be divided into several smaller child nodes. The child nodes provide fine-grained retrieval units, while the parent node preserves broader context.
+
+During retrieval, the system searches the child nodes. If multiple relevant child nodes belong to the same parent, the retrieval system can recognize that the larger parent context may be useful.
+
+For example, a document may contain a section about vector databases. That section can be represented as a parent node with child nodes covering embeddings, indexing, similarity metrics, metadata, and retrieval.
+
+A query about vector database indexing may retrieve one child node. A broader question about vector database architecture may retrieve several child nodes from the same parent. Auto-merging can then provide the parent context.
+
+## Parent-Child Relationships
+
+The quality of Auto-Merging Retrieval depends heavily on the hierarchy created during document processing.
+
+Parent nodes should contain meaningful sections rather than arbitrary collections of text. Child nodes should be small enough to support precise retrieval but large enough to represent coherent ideas.
+
+The hierarchy provides information that a basic vector retriever does not have. Instead of treating every chunk as independent, the retrieval system knows which smaller pieces belong to the same larger section.
+
+This relationship can be used to dynamically change the amount of context provided to the language model.
+
+## Auto-Merging Thresholds
+
+An auto-merging system may use a threshold to determine when several retrieved child nodes are sufficient to trigger merging into a parent node.
+
+For example, if a parent contains five child nodes and several of them are retrieved, the system may decide that enough evidence exists to return the parent.
+
+A lower threshold can cause merging to occur more frequently. This can provide broader context but may also introduce more irrelevant information.
+
+A higher threshold makes merging more selective. This can preserve precision but may prevent the system from using useful parent-level context.
+
+The appropriate threshold depends on document structure and retrieval behavior.
+
+## Comparing Sentence Windows and Auto-Merging
+
+Sentence Window Retrieval and Auto-Merging Retrieval both attempt to solve context problems, but they operate differently.
+
+Sentence Window Retrieval focuses on **local context**. It expands a retrieved sentence using neighboring sentences.
+
+Auto-Merging Retrieval focuses on **hierarchical context**. It combines related child nodes using their parent-child relationships.
+
+A sentence window is useful when important information is distributed across neighboring sentences. Auto-merging is useful when important information is distributed across multiple related chunks within the same document section.
+
+The two techniques can also be combined. A system could perform fine-grained retrieval, expand local sentence context, and use hierarchical relationships to construct broader context.
+
+However, combining techniques also increases system complexity, so evaluation is necessary.
+
+## Reranking
+
+Reranking is a second-stage retrieval technique that changes the ordering of candidate documents.
+
+A first-stage retriever is generally optimized for speed. It retrieves a set of candidates that are likely to be relevant.
+
+A reranking model then examines these candidates in more detail. The model receives the query and candidate documents and assigns relevance scores.
+
+Cross-encoder models are commonly used for this purpose. A cross-encoder processes the query and candidate document together rather than creating independent embeddings.
+
+This allows the model to examine detailed relationships between the question and candidate text.
+
+## Why Reranking Helps
+
+Vector similarity can identify documents that are semantically related, but it may not always distinguish between documents that discuss the same general topic.
+
+Consider a query asking, "How does Auto-Merging Retrieval preserve context?"
+
+A vector retriever may return documents about RAG, vector databases, hierarchical nodes, and Auto-Merging Retrieval because all of these topics are related.
+
+A reranker can examine the candidates more precisely and give higher scores to passages that directly explain how Auto-Merging Retrieval preserves context.
+
+The reranker therefore acts as a relevance refinement stage.
+
+## Candidate Selection for Reranking
+
+Reranking every document in a large knowledge base would be computationally expensive. Instead, the first-stage retriever usually returns a limited number of candidates.
+
+For example, a vector retriever might return the top ten or twenty candidates. The reranking model then scores those candidates.
+
+The number of candidates affects both retrieval quality and latency.
+
+If too few candidates are retrieved, a relevant document may never reach the reranker. If too many candidates are retrieved, the reranker must process more text and the system becomes slower.
+
+Choosing the candidate count is therefore an important design decision.
+
+## Hybrid Retrieval
+
+Hybrid retrieval combines multiple retrieval approaches.
+
+Vector retrieval is effective for semantic similarity, while keyword retrieval can be effective for exact terms.
+
+Consider a query containing a specific function name, technical identifier, or error message. Exact keyword matching may identify the correct document even when semantic similarity is not particularly strong.
+
+A hybrid system can retrieve candidates using both semantic and lexical methods. The results can then be combined using a fusion strategy.
+
+This approach can improve robustness because different retrieval methods capture different aspects of relevance.
+
+## Query Expansion
+
+Query expansion generates additional versions of the user's original question.
+
+A user query may be short or ambiguous. An expanded query can represent the same information using different wording.
+
+For example, the query "How does RAG retrieve context?" could be expanded into queries such as "How does a RAG system identify relevant document chunks?" and "How is relevant information retrieved before generation?"
+
+Multiple queries can then be used to search the knowledge base.
+
+Query expansion can improve recall by increasing the chance that relevant documents match at least one query formulation.
+
+However, poor query expansion can introduce unrelated concepts. Generated queries should therefore be evaluated rather than automatically trusted.
+
+## Query Fusion
+
+When multiple queries are generated, each query can produce its own set of retrieval results. These results need to be combined.
+
+Query fusion methods combine rankings from multiple retrieval operations. A document that appears consistently across several query results can receive a stronger combined ranking.
+
+Reciprocal Rank Fusion is one example of a ranking fusion method. It assigns higher scores to documents appearing near the top of individual rankings.
+
+Query fusion can improve retrieval recall because different query formulations may retrieve different relevant documents.
+
+## Metadata Filtering
+
+Metadata filtering can restrict retrieval to specific subsets of a knowledge base.
+
+For example, a knowledge base may contain technical documentation from multiple departments. A query could be restricted to documents belonging to the engineering department.
+
+Metadata can also represent document types, dates, categories, or versions.
+
+Combining metadata filters with semantic retrieval can improve precision by reducing the number of irrelevant candidates.
+
+However, overly restrictive filters can remove relevant information before semantic retrieval has a chance to find it.
+
+## Multi-Stage Retrieval
+
+A strong retrieval architecture often uses multiple stages.
+
+The first stage can use a fast retrieval method to generate candidates. The second stage can expand context using sentence windows or hierarchical relationships. The third stage can apply a reranker. The final stage selects the highest-quality context.
+
+Each stage serves a different purpose.
+
+Candidate retrieval emphasizes speed and recall. Context expansion emphasizes completeness. Reranking emphasizes precision. Final context selection balances relevance with context size.
+
+This separation allows each component to be optimized independently.
+
+## Retrieval Recall and Precision
+
+Retrieval quality can be described using concepts such as recall and precision.
+
+Recall measures how much of the relevant information was successfully retrieved. A system with high recall retrieves most of the information needed to answer the question.
+
+Precision measures how much of the retrieved information is actually relevant. A system with high precision avoids returning large amounts of irrelevant context.
+
+There is often a trade-off between recall and precision.
+
+Increasing the number of retrieved documents can improve recall but may reduce precision. Reranking and context filtering can help recover precision after a broader first-stage retrieval.
+
+## Context Compression
+
+Context compression attempts to reduce unnecessary information before generation.
+
+A retrieval system may return a large document containing only a few sentences that are directly relevant to the query. Passing the entire document to the language model wastes context.
+
+A compression stage can identify the portions that are most relevant and remove unnecessary material.
+
+Sentence Window Retrieval can be viewed as a controlled form of context expansion, while context compression moves in the opposite direction by reducing unnecessary information.
+
+A useful advanced RAG pipeline can combine both ideas by retrieving enough context initially and then selecting the most relevant portions before generation.
+
+## Retrieval for Complex Questions
+
+Simple questions often require only one relevant passage. Complex questions may require information from multiple documents or sections.
+
+For example, a question asking how a RAG system can improve retrieval quality using Sentence Window Retrieval, Auto-Merging Retrieval, and reranking requires information about several techniques.
+
+A single vector search may not retrieve all the necessary information.
+
+Multi-query retrieval, query fusion, hierarchical retrieval, and reranking can help assemble the required context.
+
+The retrieval system should therefore be designed according to the complexity of the questions it is expected to answer.
+
+## Advanced Retrieval and Hallucination
+
+Retrieval quality can influence the likelihood of unsupported generation.
+
+If the retrieved context contains accurate information directly related to the question, the language model has stronger evidence from which to generate its answer.
+
+However, retrieval does not automatically prevent hallucination. The model may still generate unsupported information even when relevant context is available.
+
+This is why groundedness evaluation is important. The final answer should be checked against the retrieved context.
+
+Improving retrieval and evaluating groundedness are therefore complementary tasks.
+
+## Evaluation of Advanced Retrieval
+
+Advanced retrieval techniques should be compared using consistent evaluation questions.
+
+A project can begin with a basic vector retriever and record its retrieval and generation performance. Sentence Window Retrieval can then be introduced and evaluated using the same questions.
+
+The next experiment can use Auto-Merging Retrieval. Finally, reranking can be added to determine whether the ordering of retrieved results improves.
+
+Evaluation metrics can include context relevance, answer relevance, and groundedness.
+
+TruLens can be used to record and evaluate the behavior of the RAG pipeline. This allows developers to compare retrieval configurations using measurable results rather than subjective impressions.
+
+## Trade-Offs in Advanced Retrieval
+
+Every advanced retrieval technique introduces trade-offs.
+
+Sentence Window Retrieval can improve context completeness but may increase the amount of text sent to the language model.
+
+Auto-Merging Retrieval can preserve hierarchical context but requires carefully designed parent-child relationships.
+
+Reranking can improve relevance ordering but introduces additional computation.
+
+Query expansion can improve recall but may generate noisy or redundant searches.
+
+Hybrid retrieval can improve robustness but increases system complexity.
+
+A successful RAG architecture therefore does not necessarily use every available technique. The best system uses techniques that address the specific weaknesses observed during evaluation.
+
+## Designing an Advanced Retrieval Architecture
+
+A practical advanced RAG system can begin with well-structured document ingestion and hierarchical node creation.
+
+The documents can be divided into smaller nodes and stored with metadata and parent-child relationships. Embeddings can then be generated for the retrieval units.
+
+When a user submits a query, the initial retrieval stage can identify candidate nodes. Sentence Window Retrieval can expand relevant sentences into local context, while Auto-Merging Retrieval can provide broader context when several child nodes from the same parent are relevant.
+
+The candidate context can then be passed through a reranking model. The reranker assigns relevance scores and places the most useful information at the top.
+
+The highest-ranked context is finally provided to the language model for answer generation.
+
+The entire pipeline can be monitored and evaluated using TruLens.
+
+## Conclusion
+
+Advanced retrieval is the process of improving the quality, completeness, and ordering of information supplied to a language model.
+
+Basic vector retrieval provides an efficient starting point, but it can suffer from context loss, imperfect ranking, and difficulty understanding document structure.
+
+Sentence Window Retrieval addresses local context by expanding retrieved sentences with neighboring information. Auto-Merging Retrieval addresses hierarchical context by combining related child nodes into larger parent contexts. Reranking improves candidate ordering by using a model to evaluate the relationship between queries and retrieved documents.
+
+Additional techniques such as hybrid retrieval, query expansion, query fusion, metadata filtering, and context compression can further improve retrieval depending on the application's requirements.
+
+The most important principle is that advanced retrieval techniques should be evaluated rather than adopted simply because they are sophisticated. Each method introduces benefits and trade-offs. A strong RAG system uses evaluation to determine which combination of techniques provides the best balance between relevance, context completeness, latency, and generation quality.
+
+By combining structured document processing, advanced retrieval, reranking, and systematic evaluation, a RAG application can move beyond basic similarity search toward a more reliable and context-aware information retrieval pipeline.

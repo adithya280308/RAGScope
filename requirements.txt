@@ -1,0 +1,9 @@
+llama-index-core
+llama-index-llms-groq
+llama-index-embeddings-huggingface
+sentence-transformers
+numpy
+trulens
+trulens-apps-llamaindex
+trulens-providers-litellm
+llama-index-postprocessor-sentence-transformers
